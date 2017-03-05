@@ -7,8 +7,17 @@
 //
 
 #import "AppDelegate.h"
+#import "ObjectClass.h"
+
+typedef NSString *(^TypedefBlock) (NSInteger);
+typedef void(^VoidTypdef)(void);
+
 
 @interface AppDelegate ()
+
+@property (copy, nonatomic) VoidTypdef testBlock;     // блоки всегда должны быть COPY
+@property (strong, nonatomic) NSString *name;
+
 
 @end
 
@@ -16,35 +25,127 @@
 
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    // Override point for customization after application launch.
+    
+//    void(^testBlock)(void); // определяем блок (testBlock), который ничего не принимает и не возвращает
+//    testBlock = ^ {         //
+//        NSLog(@"test Block");
+//    };
+//    testBlock();
+    
+    
+    // cоздаем блок (testBlock), который ничего не принимает и не возвращает
+    void (^testBlock)(void) = ^{
+        NSLog(@"test Block");
+    };
+    testBlock();
+
+    
+    // создаем переменную testBlockWithParametrs, которая принимает значения NSString *, NSInteger, но ничего не возвращает
+    // ^(NSString *string, NSInteger intValue) это принимаемые параметры блока
+    void (^testBlockWithParametrs)(NSString *, NSInteger) = ^(NSString *string, NSInteger intValue) {
+        NSLog(@"test Block With Par = string - %@, int Value - %d", string, intValue);
+    };
+    testBlockWithParametrs(@"im Sting", 228);
+    
+    
+    // блок который принимает параметры и возвращает
+    NSString *(^testBlockWithReturnParamsAndValue)(NSString *, NSInteger) = ^(NSString *string, NSInteger intValue) {
+        return [NSString stringWithFormat:@"test Block With Return Params And Value = %@, %d", string, intValue];
+    };
+    NSString *result = testBlockWithReturnParamsAndValue(@"im a String", 228);
+    NSLog(@"%@", result);
+    
+    
+    // отличие метода от блока
+    // в методе вызвать testString невозможно (без @property
+    NSString *testString = @"is it possible?!";
+    __block NSInteger value = 0;    // __block означает, что переменная изменяется внутри блока
+    
+    __block NSString *changedString;
+    __block NSInteger changedValue = 0;
+    void (^testBlockTwo)(void) = ^ {
+        NSLog(@"test block two");
+        NSLog(@"%@", testString);   // уникальная возможность блоков
+        NSLog(@"the number of calls = %d", ++value); // количество вызовов (!!!изменяемый параметр)
+        
+        
+        // изменяем строку
+        changedString = [NSString stringWithFormat:@"changed string %d", ++changedValue];
+        NSLog(@"%@", changedString);
+        
+    };
+    testBlockTwo();
+    testBlockTwo();
+
+    
+    // метод который принимает блок как параметр
+    [self testBlockMethod:^{
+        NSLog(@"im a block, number of my string = 74");
+    }];
+
+    
+    
+    
+    
+    
+    // переопределение
+    TypedefBlock tb = ^ (NSInteger integerValue) {
+        return [NSString stringWithFormat:@"Typedef  %d", integerValue];
+    };
+    NSLog(@"%@", tb(5));
+
+    
+    
+    
+    // объект не уничтожается
+    ObjectClass *obj = [ObjectClass new];
+    obj.name = @"Object";
+    __weak ObjectClass *weekObj = obj;
+    self.testBlock = ^ {
+//        NSLog(@"%@", obj.name);   // strong
+        NSLog(@"%@", weekObj.name); // weak 
+    };
+    self.testBlock();
+    
+    self.name = @"Hello!";
+    ObjectClass *obj2 = [ObjectClass new];
+    obj2.name = @"Object2";
+    [obj2 objectMetod:^{
+        NSLog(@"%@", self.name);
+    }];
+    
     return YES;
+}
+// метод который принимает блок как параметр
+- (void) testBlockMethod:(void(^)(void)) block  {
+    NSLog(@"im a method, number of my string = 85");
+    // блок который передан в метод
+    block();
 }
 
 
 - (void)applicationWillResignActive:(UIApplication *)application {
-    // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
-    // Use this method to pause ongoing tasks, disable timers, and invalidate graphics rendering callbacks. Games should use this method to pause the game.
+    
 }
 
 
 - (void)applicationDidEnterBackground:(UIApplication *)application {
-    // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
-    // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
+    
 }
 
 
 - (void)applicationWillEnterForeground:(UIApplication *)application {
-    // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background.
+    
 }
 
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
-    // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+    
 }
 
 
 - (void)applicationWillTerminate:(UIApplication *)application {
-    // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+    
 }
 
 
